@@ -4,6 +4,7 @@ import { tradeStore } from "../store/tradeStore";
 import { emitTrade, emitOrderBook } from "../store/eventBus";
 import { sequence } from "../store/sequence";
 import { nowNs, durationMs } from "../utils/benchmark";
+import { metricsStore } from "../store/metrics";
 
 /**
  * MatchingEngine:
@@ -58,6 +59,7 @@ export class MatchingEngine {
     console.log(
       `Order ${order.id} processed in ${latency.toFixed(3)} ms`
     );
+    metricsStore.recordOrder(latency);
   }
 
   /**
@@ -150,6 +152,7 @@ export class MatchingEngine {
 
     tradeStore.addTrade(trade);
     emitTrade(trade);
+    metricsStore.recordTrade();
   }
 
   cancelOrder(orderId: string): boolean {

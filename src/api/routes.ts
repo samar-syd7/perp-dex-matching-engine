@@ -53,10 +53,7 @@ export async function routes(fastify: FastifyInstance) {
    * GET /orderbook
    */
   fastify.get("/orderbook", async () => {
-    return {
-      bids: orderBook.bids,
-      asks: orderBook.asks,
-    };
+    return orderBook.getSnapshot();
   });
 
   /**

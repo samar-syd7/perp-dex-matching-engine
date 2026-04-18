@@ -2,6 +2,7 @@ import { Order, Trade } from "../types";
 import { OrderBook } from "../orderbook/orderBook";
 import { tradeStore } from "../store/tradeStore";
 import { emitTrade, emitOrderBook } from "../store/eventBus";
+import { sequence } from "../store/sequence";
 
 /**
  * MatchingEngine:
@@ -121,6 +122,7 @@ export class MatchingEngine {
     sellOrder.remaining -= quantity;
 
     const trade: Trade = {
+      sequenceId: sequence.next(),
       price,
       quantity,
       buyOrderId: buyOrder.id,

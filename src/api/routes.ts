@@ -62,4 +62,26 @@ export async function routes(fastify: FastifyInstance) {
   fastify.get("/trades", async () => {
     return tradeStore.getTrades();
   });
+
+  /**
+    * DELETE /order/:id
+    */
+   fastify.delete("/order/:id", async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    if (!id) {
+        return reply.status(400).send({ error: "Order ID required" });
+    }
+
+    const success = engine.cancelOrder(id);
+
+    if (!success) {
+        return reply.status(404).send({ error: "Order not found" });
+    }
+
+    return {
+        status: "cancelled",
+        orderId: id,
+    };
+    });
 }

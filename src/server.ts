@@ -28,4 +28,7 @@ app.get("/", async () => {
   return { status: "engine running" };
 });
 
-app.listen({ port: 3000, host: "0.0.0.0" });
+app.listen({
+  port: Number(process.env.PORT) || 3000,
+  host: "0.0.0.0"
+});

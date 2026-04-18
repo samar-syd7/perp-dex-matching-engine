@@ -1,19 +1,20 @@
-# Perpetual DEX Matching Engine (MVP)
+# Perpetual DEX Matching Engine
 
-A production-credible, low-latency **perpetual DEX matching engine** built with **Node.js + TypeScript**, designed to demonstrate backend systems engineering, deterministic execution, and exchange-grade architecture.
+A production-credible, low-latency **perpetual DEX matching engine** built with **Node.js + TypeScript**, designed to demonstrate **deterministic execution, exchange-grade architecture, and real-time systems design**.
 
 ---
 
 ## Overview
 
-This project implements a simplified but **correct and extensible matching engine** similar to those used in centralized and decentralized exchanges.
+This project implements a simplified but **correct and extensible matching engine** inspired by real-world exchange infrastructure.
 
-The focus is on:
+The system prioritizes:
 
-* deterministic order matching
-* price-time priority
-* clean system design
+* deterministic order execution
+* strict price-time priority
+* low-latency processing
 * real-time event streaming
+* observable system performance
 
 ---
 
@@ -22,45 +23,75 @@ The focus is on:
 ### Matching Engine
 
 * Price-time priority (FIFO within price level)
-* Partial fills
-* Maker price execution
-* Deterministic execution
+* Partial fills with correct residual handling
+* Maker price execution (resting order price)
+* Deterministic execution flow
 
-### Order Book (Advanced)
+---
 
-* Price-level architecture using:
+### Order Book (Advanced Design)
+
+* Price-level architecture:
 
   * `Map<price, FIFO queue>`
-* Efficient operations:
+* Guarantees:
 
   * O(1) best bid/ask access
-  * O(1) removal at head
-* Strict FIFO guarantees
+  * strict FIFO ordering within price levels
+* Efficient removal of filled orders
+
+---
+
+### Order Lifecycle
+
+```text
+CREATE → MATCH → PARTIAL FILL → REST → CANCEL
+```
+
+* Supports full lifecycle including cancellation
+* Idempotent order submission
+
+---
 
 ### API Layer
 
 * `POST /order` → place order
 * `DELETE /order/:id` → cancel order
-* `GET /orderbook` → snapshot
+* `GET /orderbook` → full snapshot
 * `GET /trades` → executed trades
+* `GET /metrics` → system performance
+
+---
 
 ### Real-Time Streaming
 
-* WebSocket endpoint `/ws`
+* WebSocket endpoint: `/ws`
 * Streams:
 
   * trades
   * orderbook updates
 
-### System Features
+Event-driven architecture using an internal **event bus**.
 
-* Idempotent order processing
-* Token-bucket rate limiting
-* Event-driven architecture (event bus)
+---
+
+### System Guarantees
+
+* Deterministic matching (single-threaded execution)
+* Strict price-time priority
 * Monotonic sequence numbers for:
 
+  * ordered event delivery
   * deterministic replay
   * client-side consistency
+
+---
+
+### Rate Limiting
+
+* Token bucket per IP
+* Burst-friendly design
+* Prevents API abuse without affecting trading bursts
 
 ---
 
@@ -86,14 +117,14 @@ Client (REST / WS)
 
 ## Matching Logic
 
-### Buy Order
+### Buy Orders
 
-* Matches lowest ask
+* Match against lowest ask
 * Condition: `ask.price <= buy.price`
 
-### Sell Order
+### Sell Orders
 
-* Matches highest bid
+* Match against highest bid
 * Condition: `bid.price >= sell.price`
 
 ### Trade Price
@@ -102,29 +133,49 @@ Client (REST / WS)
 
 ---
 
-## Order Lifecycle
-
-```text
-CREATE → MATCH → PARTIAL FILL → REST → CANCEL
-```
-
----
-
 ## Sequence Numbers
 
-Every event is assigned a **monotonic sequenceId**:
+Each trade and orderbook update includes a **monotonic sequenceId**:
 
-* Ensures strict ordering
+* Ensures strict ordering of events
 * Enables deterministic replay
 * Allows clients to detect missed updates
 
 ---
 
-## Rate Limiting
+## Performance & Observability
 
-* Token bucket per IP
-* Burst capacity + steady refill
-* Prevents API abuse without harming trading bursts
+The engine includes built-in **latency instrumentation** using high-resolution timers (`process.hrtime.bigint()`).
+
+### Metrics Exposed
+
+* `totalOrders` — total processed orders
+* `avgLatencyMs` — average latency per order
+* `lastLatencyMs` — most recent latency
+* `tradesCount` — total executed trades
+
+### Metrics Endpoint
+
+```bash
+curl http://localhost:3000/metrics
+```
+
+### Example Output
+
+```json
+{
+  "totalOrders": 1000,
+  "avgLatencyMs": 0.08,
+  "lastLatencyMs": 0.09,
+  "tradesCount": 500
+}
+```
+
+### Notes
+
+* Latency measured per order processing cycle
+* In-memory processing enables **sub-millisecond latency locally**
+* Does not include network or distributed system overhead
 
 ---
 
@@ -133,7 +184,7 @@ Every event is assigned a **monotonic sequenceId**:
 * Node.js
 * TypeScript
 * Fastify
-* WebSockets (@fastify/websocket)
+* WebSockets (`@fastify/websocket`)
 
 ---
 
@@ -144,7 +195,7 @@ npm install
 npm run dev
 ```
 
-Server runs on:
+Server runs at:
 
 ```
 http://localhost:3000
@@ -152,7 +203,7 @@ http://localhost:3000
 
 ---
 
-## API Examples
+## API Usage
 
 ### Place Order
 
@@ -162,17 +213,23 @@ curl -X POST http://localhost:3000/order \
 -d '{"id":"1","side":"buy","price":100,"quantity":5}'
 ```
 
+---
+
 ### Cancel Order
 
 ```bash
 curl -X DELETE http://localhost:3000/order/1
 ```
 
+---
+
 ### Get Orderbook
 
 ```bash
 curl http://localhost:3000/orderbook
 ```
+
+---
 
 ### Get Trades
 
@@ -196,17 +253,19 @@ ws.onmessage = (msg) => {
 
 ## Design Trade-offs
 
-### MVP Simplicity
+### MVP Decisions
 
-* In-memory storage
-* Single-threaded execution
+* In-memory state (no persistence)
+* Single-threaded execution model
+* Full snapshot streaming (no diff compression)
 
 ### Production Considerations
 
-* Replace in-memory store with Redis/Kafka
 * Distributed matching engine
-* Persistent order log
-* Snapshot + delta streaming
+* Persistent event sourcing (Kafka / logs)
+* Snapshot + incremental (delta) updates
+* Horizontal scaling
+* Fault tolerance and replication
 
 ---
 
@@ -214,9 +273,10 @@ ws.onmessage = (msg) => {
 
 * Market orders
 * Order amendments
-* Persistent event sourcing
-* Latency benchmarking
-* Horizontal scaling
+* Persistent order log
+* Latency percentiles (p95 / p99)
+* Prometheus / OpenTelemetry integration
+* Multi-asset support
 
 ---
 
@@ -225,9 +285,10 @@ ws.onmessage = (msg) => {
 This project demonstrates:
 
 * backend systems design
-* low-latency thinking
-* deterministic execution
-* real-time data streaming
+* low-latency architecture
+* deterministic state machines
+* real-time event streaming
+* observability and performance measurement
 
 ---
 

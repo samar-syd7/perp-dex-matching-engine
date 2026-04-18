@@ -1,5 +1,6 @@
 import { Order } from "../types";
 import { OrderQueue } from "./queue";
+import { sequence } from "../store/sequence";
 
 /**
  * High-performance OrderBook
@@ -124,6 +125,10 @@ export class OrderBook {
       asks.push(...this.asks.get(price)!.getAll());
     }
 
-    return { bids, asks };
+    return {
+      sequenceId: sequence.next(), // NEW
+      bids,
+      asks,
+    };
   }
 }

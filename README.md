@@ -4,6 +4,16 @@ A production-credible, low-latency **perpetual DEX matching engine** built with 
 
 ---
 
+## Live Demo
+
+- API Base: https://perp-dex-matching-engine-production.up.railway.app/
+- WebSocket: wss://perp-dex-matching-engine-production.up.railway.app/ws
+
+Example:
+curl -X GET https://perp-dex-matching-engine-production.up.railway.app/orderbook
+
+---
+
 ## Overview
 
 This project implements a simplified but **correct and extensible matching engine** inspired by real-world exchange infrastructure.

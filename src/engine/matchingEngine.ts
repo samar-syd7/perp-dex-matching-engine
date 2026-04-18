@@ -1,6 +1,7 @@
 import { Order, Trade } from "../types";
 import { OrderBook } from "../orderbook/orderBook";
 import { tradeStore } from "../store/tradeStore";
+import { emitTrade, emitOrderBook } from "../store/eventBus";
 
 /**
  * MatchingEngine:
@@ -29,12 +30,14 @@ export class MatchingEngine {
       this.matchSell(order);
     }
 
+    
     /**
      * If not fully filled → rest on book
-     */
-    if (order.remaining > 0) {
-      this.orderBook.addOrder(order);
+    */
+   if (order.remaining > 0) {
+     this.orderBook.addOrder(order);
     }
+    emitOrderBook(this.orderBook.bids, this.orderBook.asks);
   }
 
   /**
@@ -125,5 +128,6 @@ export class MatchingEngine {
     };
 
     tradeStore.addTrade(trade);
+    emitTrade(trade);
   }
 }

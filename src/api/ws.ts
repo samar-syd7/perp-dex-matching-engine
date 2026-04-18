@@ -6,11 +6,19 @@ export async function wsRoutes(fastify: FastifyInstance) {
     const ws = connection; 
 
     const tradeHandler = (trade: any) => {
-      ws.send(JSON.stringify({ type: "trade", data: trade }));
+      ws.send(JSON.stringify({
+        type: "trade",
+        sequenceId: trade.sequenceId,
+        data: trade,
+      }));
     };
 
     const orderbookHandler = (data: any) => {
-      ws.send(JSON.stringify({ type: "orderbook", data }));
+      ws.send(JSON.stringify({
+        type: "orderbook",
+        sequenceId: data.sequenceId,
+        data,
+      }));
     };
 
     eventBus.on("trade", tradeHandler);

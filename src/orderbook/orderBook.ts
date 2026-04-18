@@ -75,6 +75,41 @@ export class OrderBook {
   }
 
   /**
+   * Cancel order by ID
+   */
+  cancelOrder(orderId: string): boolean {
+    // search bids
+    for (const price of this.bidPrices) {
+      const queue = this.bids.get(price)!;
+      const removed = queue.removeById(orderId);
+
+      if (removed) {
+        if (queue.isEmpty()) {
+          this.bids.delete(price);
+          this.bidPrices = this.bidPrices.filter(p => p !== price);
+        }
+        return true;
+      }
+    }
+
+    // search asks
+    for (const price of this.askPrices) {
+      const queue = this.asks.get(price)!;
+      const removed = queue.removeById(orderId);
+
+      if (removed) {
+        if (queue.isEmpty()) {
+          this.asks.delete(price);
+          this.askPrices = this.askPrices.filter(p => p !== price);
+        }
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * Flatten orderbook (for API)
    */
   getSnapshot() {

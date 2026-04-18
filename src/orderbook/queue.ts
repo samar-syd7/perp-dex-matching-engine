@@ -1,4 +1,4 @@
-export class OrderQueue<T> {
+export class OrderQueue<T extends { id: string }> {
   private items: T[] = [];
 
   enqueue(item: T) {
@@ -19,5 +19,17 @@ export class OrderQueue<T> {
 
   getAll(): T[] {
     return this.items;
+  }
+
+  /**
+   * Remove specific order (for cancel)
+   * O(n) — acceptable for MVP
+   */
+  removeById(id: string): boolean {
+    const index = this.items.findIndex(o => o.id === id);
+    if (index === -1) return false;
+
+    this.items.splice(index, 1);
+    return true;
   }
 }

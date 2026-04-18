@@ -1,40 +1,57 @@
 import { Order } from "../types";
+import { OrderQueue } from "./queue";
 
 /**
- * OrderBook responsibilities:
- * - Maintain sorted bids & asks
- * - Enforce price-time priority
- * - Provide best bid/ask access
+ * High-performance OrderBook
+ * - price levels (Map)
+ * - FIFO queues per price
  */
 export class OrderBook {
-  public bids: Order[] = [];
-  public asks: Order[] = [];
+  public bids = new Map<number, OrderQueue<Order>>();
+  public asks = new Map<number, OrderQueue<Order>>();
+
+  public bidPrices: number[] = [];
+  public askPrices: number[] = [];
 
   /**
-   * Insert order into correct side
-   * Sorting enforces:
-   *  - price priority
-   *  - time priority (FIFO within price)
+   * Insert order into price level
    */
   addOrder(order: Order) {
-    if (order.side === "buy") {
-      this.bids.push(order);
+    const book = order.side === "buy" ? this.bids : this.asks;
+    const priceList = order.side === "buy" ? this.bidPrices : this.askPrices;
 
-      // Highest price first, then earliest timestamp
-      this.bids.sort((a, b) => {
-        if (b.price !== a.price) return b.price - a.price;
-        return a.timestamp - b.timestamp;
-      });
+    if (!book.has(order.price)) {
+      book.set(order.price, new OrderQueue());
 
-    } else {
-      this.asks.push(order);
+      // insert price into sorted list
+      priceList.push(order.price);
 
-      // Lowest price first, then earliest timestamp
-      this.asks.sort((a, b) => {
-        if (a.price !== b.price) return a.price - b.price;
-        return a.timestamp - b.timestamp;
-      });
+      if (order.side === "buy") {
+        priceList.sort((a, b) => b - a); // DESC
+      } else {
+        priceList.sort((a, b) => a - b); // ASC
+      }
     }
+
+    book.get(order.price)!.enqueue(order);
+  }
+
+  /**
+   * Get best bid
+   */
+  getBestBid(): Order | undefined {
+    if (this.bidPrices.length === 0) return undefined;
+    const bestPrice = this.bidPrices[0];
+    return this.bids.get(bestPrice)?.peek();
+  }
+
+  /**
+   * Get best ask
+   */
+  getBestAsk(): Order | undefined {
+    if (this.askPrices.length === 0) return undefined;
+    const bestPrice = this.askPrices[0];
+    return this.asks.get(bestPrice)?.peek();
   }
 
   /**
@@ -42,21 +59,36 @@ export class OrderBook {
    */
   removeOrder(order: Order) {
     const book = order.side === "buy" ? this.bids : this.asks;
+    const priceList = order.side === "buy" ? this.bidPrices : this.askPrices;
 
-    const index = book.findIndex(o => o.id === order.id);
-    if (index !== -1) {
-      book.splice(index, 1);
+    const queue = book.get(order.price);
+    if (!queue) return;
+
+    queue.dequeue(); // FIFO removal
+
+    if (queue.isEmpty()) {
+      book.delete(order.price);
+
+      const index = priceList.indexOf(order.price);
+      if (index !== -1) priceList.splice(index, 1);
     }
   }
 
   /**
-   * Best prices (top of book)
+   * Flatten orderbook (for API)
    */
-  getBestBid(): Order | undefined {
-    return this.bids[0];
-  }
+  getSnapshot() {
+    const bids: Order[] = [];
+    const asks: Order[] = [];
 
-  getBestAsk(): Order | undefined {
-    return this.asks[0];
+    for (const price of this.bidPrices) {
+      bids.push(...this.bids.get(price)!.getAll());
+    }
+
+    for (const price of this.askPrices) {
+      asks.push(...this.asks.get(price)!.getAll());
+    }
+
+    return { bids, asks };
   }
 }

@@ -35,9 +35,10 @@ export class MatchingEngine {
      * If not fully filled → rest on book
     */
    if (order.remaining > 0) {
-     this.orderBook.addOrder(order);
+      this.orderBook.addOrder(order);
     }
-    emitOrderBook(this.orderBook.bids, this.orderBook.asks);
+    const { bids, asks } = this.orderBook.getSnapshot();
+    emitOrderBook(bids, asks);
   }
 
   /**
@@ -46,7 +47,7 @@ export class MatchingEngine {
   private matchBuy(order: Order) {
     while (
       order.remaining > 0 &&
-      this.orderBook.asks.length > 0
+      this.orderBook.askPrices.length > 0
     ) {
       const bestAsk = this.orderBook.getBestAsk();
       if (!bestAsk) break;
@@ -80,7 +81,7 @@ export class MatchingEngine {
   private matchSell(order: Order) {
     while (
       order.remaining > 0 &&
-      this.orderBook.bids.length > 0
+      this.orderBook.bidPrices.length > 0
     ) {
       const bestBid = this.orderBook.getBestBid();
       if (!bestBid) break;

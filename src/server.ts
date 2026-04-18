@@ -11,8 +11,8 @@ app.register(routes);
 /**
  * WebSocket endpoint
  */
-app.get("/ws", { websocket: true }, (connection) => {
-  const { socket } = connection;
+app.get("/ws", { websocket: true }, (connection, req) => {
+  const socket = connection.socket;
 
   const tradeHandler = (trade: any) => {
     socket.send(JSON.stringify({ type: "trade", data: trade }));

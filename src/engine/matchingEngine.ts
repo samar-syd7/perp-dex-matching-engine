@@ -3,6 +3,7 @@ import { OrderBook } from "../orderbook/orderBook";
 import { tradeStore } from "../store/tradeStore";
 import { emitTrade, emitOrderBook } from "../store/eventBus";
 import { sequence } from "../store/sequence";
+import { nowNs, durationMs } from "../utils/benchmark";
 
 /**
  * MatchingEngine:
@@ -16,30 +17,47 @@ export class MatchingEngine {
   constructor(private orderBook: OrderBook) {}
 
   processOrder(order: Order) {
+    const start = nowNs(); // benchmark start
+
     /**
-     * Idempotency:
-     * Prevent duplicate processing of same order ID
+     * Idempotency
      */
     if (this.processedOrders.has(order.id)) {
       return;
     }
     this.processedOrders.add(order.id);
 
+    /**
+     * Matching
+     */
     if (order.side === "buy") {
       this.matchBuy(order);
     } else {
       this.matchSell(order);
     }
 
-    
     /**
-     * If not fully filled → rest on book
-    */
-   if (order.remaining > 0) {
+     * Rest if not fully filled
+     */
+    if (order.remaining > 0) {
       this.orderBook.addOrder(order);
     }
-    const { bids, asks } = this.orderBook.getSnapshot();
-    emitOrderBook(bids, asks);
+
+    /**
+     * Emit full snapshot WITH sequenceId
+     */
+    const snapshot = this.orderBook.getSnapshot();
+    emitOrderBook(snapshot); // pass full object
+
+    /**
+     * Benchmark logging
+     */
+    const end = nowNs();
+    const latency = durationMs(start, end);
+
+    console.log(
+      `Order ${order.id} processed in ${latency.toFixed(3)} ms`
+    );
   }
 
   /**

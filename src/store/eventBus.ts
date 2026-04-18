@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import { Trade, Order } from "../types";
+import { Trade, Order, OrderBookSnapshot } from "../types";
 
 class EventBus extends EventEmitter {}
 
@@ -15,6 +15,6 @@ export function emitTrade(trade: Trade) {
 /**
  * Emit orderbook update
  */
-export function emitOrderBook(bids: Order[], asks: Order[]) {
-  eventBus.emit("orderbook", { bids, asks });
+export function emitOrderBook(snapshot: any) {
+  eventBus.emit("orderbook", snapshot);
 }

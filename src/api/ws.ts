@@ -3,7 +3,7 @@ import { eventBus } from "../store/eventBus";
 
 export async function wsRoutes(fastify: FastifyInstance) {
   fastify.get("/ws", { websocket: true }, (connection) => {
-    const ws = connection.socket;
+    const ws = connection; 
 
     const tradeHandler = (trade: any) => {
       ws.send(JSON.stringify({ type: "trade", data: trade }));

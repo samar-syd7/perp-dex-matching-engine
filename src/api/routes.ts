@@ -3,6 +3,7 @@ import { MatchingEngine } from "../engine/matchingEngine";
 import { OrderBook } from "../orderbook/orderBook";
 import { tradeStore } from "../store/tradeStore";
 import { Order } from "../types";
+import { metricsStore } from "../store/metrics";
 
 /**
  * Shared state (singleton)
@@ -83,5 +84,12 @@ export async function routes(fastify: FastifyInstance) {
         status: "cancelled",
         orderId: id,
     };
+    });
+
+    /**
+     * GET /metrics
+     */
+    fastify.get("/metrics", async () => {
+      return metricsStore.getMetrics();
     });
 }

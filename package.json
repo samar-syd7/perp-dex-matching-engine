@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/samar-syd7/perp-dex-matching-engine#readme",
   "dependencies": {
+    "@fastify/websocket": "^11.2.0",
     "fastify": "^5.8.5"
   },
   "devDependencies": {

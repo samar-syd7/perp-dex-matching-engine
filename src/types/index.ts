@@ -17,9 +17,16 @@ export interface Order {
  * Trade = execution event
  */
 export interface Trade {
+  sequenceId: number;
   price: number;
   quantity: number;
   buyOrderId: string;
   sellOrderId: string;
   timestamp: number;
+}
+
+export interface OrderBookSnapshot {
+  sequenceId: number;
+  bids: Order[];
+  asks: Order[];
 }

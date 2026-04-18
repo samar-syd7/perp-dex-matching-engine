@@ -131,4 +131,8 @@ export class MatchingEngine {
     tradeStore.addTrade(trade);
     emitTrade(trade);
   }
+
+  cancelOrder(orderId: string): boolean {
+    return this.orderBook.cancelOrder(orderId);
+  }
 }

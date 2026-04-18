@@ -11,21 +11,27 @@ app.register(routes);
 /**
  * WebSocket endpoint
  */
-app.get("/ws", { websocket: true }, (connection, req) => {
-  const socket = connection.socket;
+app.get("/ws", { websocket: true }, (connection, request) => {
+  const ws = connection.socket;
+
+  // sanity check
+  if (!ws || typeof ws.send !== "function") {
+    console.error("Invalid WebSocket object");
+    return;
+  }
 
   const tradeHandler = (trade: any) => {
-    socket.send(JSON.stringify({ type: "trade", data: trade }));
+    ws.send(JSON.stringify({ type: "trade", data: trade }));
   };
 
   const orderbookHandler = (data: any) => {
-    socket.send(JSON.stringify({ type: "orderbook", data }));
+    ws.send(JSON.stringify({ type: "orderbook", data }));
   };
 
   eventBus.on("trade", tradeHandler);
   eventBus.on("orderbook", orderbookHandler);
 
-  socket.on("close", () => {
+  ws.on("close", () => {
     eventBus.off("trade", tradeHandler);
     eventBus.off("orderbook", orderbookHandler);
   });
